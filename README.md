@@ -11,3 +11,4 @@ Using simdjson/simdjson (https://github.com/simdjson/simdjson) Apache-2.0 Licens
         return doc.string_buf;
     }
 ```
+# Parallel Parsing. (using std::thread)
