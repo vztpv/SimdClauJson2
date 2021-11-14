@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 
             int count = 1;
             for (; tape_idx < how_many; tape_idx++) {
-                if (count < 8 && tape_idx == start[count]) {
+                if (count < thr_num && tape_idx == start[count]) {
                     count++;
                 }
                 else if (count < thr_num && tape_idx == start[count] + 1) {
