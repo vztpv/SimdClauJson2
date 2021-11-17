@@ -1,9 +1,5 @@
 ﻿#pragma once
 
-
-
-#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-
 #include <iostream>
 #include "simdjson.h" // modified simdjson 0.9.7
 
