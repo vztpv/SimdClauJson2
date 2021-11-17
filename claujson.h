@@ -1,4 +1,8 @@
-#pragma once
+﻿#pragma once
+
+
+
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 
 #include <iostream>
 #include "simdjson.h" // modified simdjson 0.9.7
@@ -1454,8 +1458,7 @@ namespace claujson {
 			outFile.close();
 		}
 	};
-
-
+	
 	inline int Parse(const std::string& fileName, int thr_num, UserType* ut)
 	{
 		if (thr_num <= 0) {
@@ -1513,66 +1516,77 @@ namespace claujson {
 					start[i] = how_many / thr_num * i;
 				}
 
+				// remove?
+				//int expect_depth_max = 10;
+				//std::vector<int> _stack; _stack.reserve(expect_depth_max);
+				//std::vector<int> _stack2; _stack2.reserve(expect_depth_max);
 
-				std::vector<int> _stack;
-				std::vector<int> _stack2;
-
+				int c = clock();
+	
 				int count = 1;
 				for (; tape_idx < how_many; tape_idx++) {
 					if (count < thr_num && tape_idx == start[count]) {
-						count++;
+						count++; 
 					}
 					else if (count < thr_num && tape_idx == start[count] + 1) {
 						start[count] = tape_idx;
+						count++; 
 					}
 
-					//os << tape_idx << " : ";
 					tape_val = tape[tape_idx];
 					payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
 					type = uint8_t(tape_val >> 56);
 
-					if (!_stack.empty() && _stack.back() == 1) { // if it is object,
-						_stack2.back() += 1; // next
-						_stack2.back() &= 1; // % 2
+					switch (type) {
+					case 'l':
+					case 'u':
+					case 'd':
+						tape_idx++;
+						break;
 					}
+				}
+
+				
+				int d = clock();
+				std::cout << d - c << "ms\n";
+				bool now_object = false;
+				bool even = false;
+
+				for (tape_idx = 1; tape_idx < how_many; tape_idx++) {
+					//os << tape_idx << " : ";
+					tape_val = tape[tape_idx];
+					payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
+					type = uint8_t(tape_val >> 56);
+					
+					even = !even;
 
 					switch (type) {
 					case '"': // we have a string
-						//os << "string \"";
-					   // std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-					   // os << internal::escape_json_string(std::string_view(
-					   //     reinterpret_cast<const char*>(string_buf.get() + payload + sizeof(uint32_t)),
-					   //     string_length
-					   // ));
-					   // os << '"';
-					  //  os << '\n';
-						if (!_stack.empty() && _stack.back() == 1) { // if it is object,
-							if (_stack2.back() == 1) {
-								key[tape_idx] = 1;
-							}
+						if (now_object && even) {
+							key[tape_idx] = 1;
 						}
 
 						break;
 					case 'l': // we have a long int
-						if (tape_idx + 1 >= how_many) {
-							return false;
-						}
+					//	if (tape_idx + 1 >= how_many) {
+					//		return false;
+						//}
 						//  os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
 						++tape_idx;
 
 						break;
 					case 'u': // we have a long uint
-						if (tape_idx + 1 >= how_many) {
-							return false;
-						}
+						//if (tape_idx + 1 >= how_many) {
+						//	return false;
+						//}
 						//  os << "unsigned integer " << tape[++tape_idx] << "\n";
 						++tape_idx;
 						break;
 					case 'd': // we have a double
 					  //  os << "float ";
-						if (tape_idx + 1 >= how_many) {
-							return false;
-						}
+						//if (tape_idx + 1 >= how_many) {
+						//	return false;
+						//}
 
 						// double answer;
 						// std::memcpy(&answer, &tape[++tape_idx], sizeof(answer));
@@ -1593,27 +1607,31 @@ namespace claujson {
 					 //       << " (first node after the scope), "
 					  //      << " saturated count "
 					   //     << ((payload >> 32) & internal::JSON_COUNT_MASK) << "\n";
-
-						_stack.push_back(1);
-						_stack2.push_back(0);
+						now_object = true; even = false;
+						//_stack.push_back(1);
+						//_stack2.push_back(0);
 						break;
 					case '}': // we end an object
 					  //  os << "}\t// pointing to previous tape location " << uint32_t(payload)
 					  //      << " (start of the scope)\n";
-						_stack.pop_back();
-						_stack2.pop_back();
+						//_stack.pop_back();
+						//_stack2.pop_back();
+
+						now_object = key[uint32_t(payload) - 1] == 1; even = false;
 						break;
 					case '[': // we start an array
 					  //  os << "[\t// pointing to next tape location " << uint32_t(payload)
 					  //      << " (first node after the scope), "
 					  //      << " saturated count "
 					   //     << ((payload >> 32) & internal::JSON_COUNT_MASK) << "\n";
-						_stack.push_back(0);
+						//_stack.push_back(0);
+						now_object = false; even = false;
 						break;
 					case ']': // we end an array
 					 //   os << "]\t// pointing to previous tape location " << uint32_t(payload)
 					  //      << " (start of the scope)\n";
-						_stack.pop_back();
+						//_stack.pop_back();
+						now_object = key[uint32_t(payload) - 1] == 1; even = false;
 						break;
 					case 'r': // we start and end with the root node
 					  // should we be hitting the root node?
@@ -1623,7 +1641,7 @@ namespace claujson {
 						return -3;
 					}
 				}
-
+				std::cout << clock() - d << "ms\n";
 			}
 
 			int b = clock();
