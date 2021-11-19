@@ -1278,7 +1278,7 @@ namespace claujson {
 					//try
 					{
 						int i = 0;
-						std::vector<int> chk(8, 0);
+						std::vector<int> chk(parse_num, 0);
 						auto x = next.begin();
 						auto y = __global.begin();
 						while (true) {
