@@ -1,8 +1,8 @@
 # SimdClauJson2
 claujson...
 
-# Just Added to simdjson/simdjson
-  ```c++
+# Just Added to simdjson/simdjson // to parser class
+  ```c++  
     inline const std::unique_ptr<uint64_t[]>& raw_tape() const noexcept {
         return doc.tape;
     }
