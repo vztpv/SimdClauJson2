@@ -147,7 +147,7 @@ namespace claujson {
 		switch (type) {
 		case '"': // we have a string
 			std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-			data.str_val = simdjson::internal::escape_json_string(std::string_view(
+			data.str_val = (std::string(
 				reinterpret_cast<const char*>(string_buf.get() + payload + sizeof(uint32_t)),
 				string_length
 			));
