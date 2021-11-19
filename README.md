@@ -3,11 +3,11 @@ claujson...
 
 # Just Added to simdjson/simdjson
   ```c++
-    inline const std::unique_ptr<uint64_t[]>& parser::raw_tape() const noexcept {
+    inline const std::unique_ptr<uint64_t[]>& raw_tape() const noexcept {
         return doc.tape;
     }
 
-    inline const std::unique_ptr<uint8_t[]>& parser::raw_string_buf() const noexcept {
+    inline const std::unique_ptr<uint8_t[]>& raw_string_buf() const noexcept {
         return doc.string_buf;
     }
 ```
