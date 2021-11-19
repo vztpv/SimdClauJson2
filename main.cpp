@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	int b = clock();
 	std::cout << "total " << b - a << "ms\n";
 
-	//claujson::LoadData::_save(std::cout, &ut);
-	//claujson::LoadData::save("output.json", ut);
+	claujson::LoadData::_save(std::cout, &ut);
+//	claujson::LoadData::save("output.json", ut);
 	return x;
 }

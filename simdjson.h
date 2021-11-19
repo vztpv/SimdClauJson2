@@ -4182,7 +4182,6 @@ public:
    */
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
-
   /** @private Structural values. */
   std::unique_ptr<uint64_t[]> tape{};
 
@@ -4269,6 +4268,15 @@ static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
  */
 class parser {
 public:
+
+    inline const std::unique_ptr<uint64_t[]>& raw_tape() const noexcept {
+        return doc.tape;
+    }
+
+    inline const std::unique_ptr<uint8_t[]>& raw_string_buf() const noexcept {
+        return doc.string_buf;
+    }
+
   /**
    * Create a JSON parser.
    *
@@ -4762,8 +4770,9 @@ public:
   inline bool print_json(std::ostream &os) const noexcept;
 
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
-  inline const std::unique_ptr<uint64_t[]>& raw_tape() const noexcept;
-  inline const std::unique_ptr<uint8_t[]>& raw_string_buf() const noexcept;
+  inline bool dump_raw_tape(std::ostream &os) const noexcept;
+
+
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -8522,12 +8531,8 @@ inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
 
-inline const std::unique_ptr<uint64_t[]>& parser::raw_tape() const noexcept {
-    return doc.tape;
-}
-
-inline const std::unique_ptr<uint8_t[]>& parser::raw_string_buf() const noexcept {
-    return doc.string_buf;
+inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
+  return valid ? doc.dump_raw_tape(os) : false;
 }
 
 inline simdjson_result<size_t> parser::read_file(const std::string &path) noexcept {

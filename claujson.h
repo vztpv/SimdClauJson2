@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+
 #include <iostream>
 #include "simdjson.h" // modified simdjson 0.9.7
 
@@ -91,6 +92,47 @@ namespace claujson {
 
 			return *this;
 		}
+
+		friend std::ostream& operator<<(std::ostream& stream, const Data& data) {
+
+			switch (data.type) {
+			case simdjson::internal::tape_type::INT64:
+				stream << data.int_val;
+				break;
+			case simdjson::internal::tape_type::UINT64:
+				stream << data.uint_val;
+				break;
+			case simdjson::internal::tape_type::DOUBLE:
+				stream << data.float_val;
+				break;
+			case simdjson::internal::tape_type::STRING:
+				stream << data.str_val;
+				break;
+			case simdjson::internal::tape_type::TRUE_VALUE:
+				stream << "true";
+				break;
+			case simdjson::internal::tape_type::FALSE_VALUE:
+				stream << "false";
+				break;
+			case simdjson::internal::tape_type::NULL_VALUE:
+				stream << "null";
+				break;
+			case simdjson::internal::tape_type::START_ARRAY:
+				stream << "[";
+				break;
+			case simdjson::internal::tape_type::START_OBJECT:
+				stream << "{";
+				break;
+			case simdjson::internal::tape_type::END_ARRAY:
+				stream << "]";
+				break;
+			case simdjson::internal::tape_type::END_OBJECT:
+				stream << "}";
+				break;
+			}
+
+			return stream;
+		}
 	};
 
 	inline Data Convert(uint64_t* token, const std::unique_ptr<uint8_t[]>& string_buf) {
@@ -105,11 +147,11 @@ namespace claujson {
 		switch (type) {
 		case '"': // we have a string
 			std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-			data.str_val = std::string(
+			data.str_val = simdjson::internal::escape_json_string(std::string_view(
 				reinterpret_cast<const char*>(string_buf.get() + payload + sizeof(uint32_t)),
 				string_length
-			);
-			
+			));
+
 			break;
 		case 'l': // we have a long int
 			data.int_val = *(token + 1);
@@ -1046,9 +1088,10 @@ namespace claujson {
 		}
 
 		// need random access..
-		static int64_t FindDivisionPlace(const std::unique_ptr<uint64_t[]>& token_arr, int64_t start, int64_t last)
+		static int64_t FindDivisionPlace(const std::unique_ptr<uint8_t[]>& string_buf, const std::unique_ptr<uint64_t[]>& token_arr, const std::vector<int>& is_key, int64_t start, int64_t last)
 		{
 			for (int64_t a = start; a <= last; ++a) {
+				bool key = is_key[a];
 				auto& x = token_arr[a];
 				const simdjson::internal::tape_type type = static_cast<simdjson::internal::tape_type>(x >> 56);
 
@@ -1124,6 +1167,10 @@ namespace claujson {
 				if (type == simdjson::internal::tape_type::START_OBJECT || type == simdjson::internal::tape_type::START_ARRAY) { // left
 					return A + 1;
 				}
+				else if (key == false) {
+					//std::cout << Convert(&token_arr[a + 1], string_buf) << "\n";
+					return a + 1;
+				}
 			}
 			return -1;
 		}
@@ -1154,7 +1201,7 @@ namespace claujson {
 					pivot.push_back(start[0]);
 
 					for (int i = 1; i < parse_num; ++i) {
-						pivot.push_back(FindDivisionPlace(token_arr, start[i], start[i + 1] - 1));
+						pivot.push_back(FindDivisionPlace(string_buf, token_arr, key, start[i], start[i + 1] - 1));
 					}
 
 					for (size_t i = 0; i < pivot.size(); ++i) {
@@ -1167,6 +1214,10 @@ namespace claujson {
 						pivots.push_back(x);
 					}
 
+					pivots.push_back(length - 1);
+				}
+				else {
+					pivots.push_back(start[0]);
 					pivots.push_back(length - 1);
 				}
 
@@ -1478,9 +1529,15 @@ namespace claujson {
 
 				return -1;
 			}
+			if (!test.valid) {
+				std::cout << "parser is not valid\n";
+
+				//return -2;
+			}
 
 			const auto& tape = test.raw_tape();
 			const auto& string_buf = test.raw_string_buf();
+
 
 			std::vector<int64_t> start(thr_num + 1, 0);
 			std::vector<int> key;
@@ -1549,6 +1606,7 @@ namespace claujson {
 				bool even = false;
 
 				for (tape_idx = 1; tape_idx < how_many; tape_idx++) {
+
 					//os << tape_idx << " : ";
 					tape_val = tape[tape_idx];
 					payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
