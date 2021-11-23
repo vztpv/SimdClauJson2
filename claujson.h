@@ -245,7 +245,7 @@ namespace claujson {
 
 		std::vector<int> order; // ut data and it data order....
 	public:
-		inline const static size_t npos = -1; // ?
+		//inline const static size_t npos = -1; // ?
 		// chk type?
 		bool operator<(const UserType& other) const {
 			return name.str_val < other.name.str_val;
