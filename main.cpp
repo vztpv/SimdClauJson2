@@ -18,11 +18,18 @@ int main(int argc, char* argv[])
 	claujson::UserType ut;
 	
 	int a = clock();
-	int x = claujson::Parse(argv[1], 0, &ut);
+	std::vector<claujson::Block> blocks;
+	auto x = claujson::Parse(argv[1], 0, &ut, blocks);
+	claujson::PoolManager poolManager(x, std::move(blocks)); // using pool manager, add Item or remove
 	int b = clock();
 	std::cout << "total " << b - a << "ms\n";
 
-	claujson::LoadData::_save(std::cout, &ut);
+	//claujson::LoadData::_save(std::cout, &ut);
 	//claujson::LoadData::save("output.json", ut);
-	return x;
+	
+	poolManager.Clear();
+	free(x);
+
+
+	return nullptr != x;
 }
